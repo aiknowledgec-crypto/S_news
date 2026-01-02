@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>S.NEWS - Professional News</title>
+    <style>
+        :root {
+            --primary: #1a1a1a;
+            --accent: #e63946;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --border: #e9ecef;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-light); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+        #app { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 70px; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 0 16px; }
+
+        header { position: sticky; top: 0; z-index: 100; background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -1px; color: var(--primary); text-transform: uppercase; }
+        .logo span { color: var(--accent); }
+        .refresh-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%; transition: var(--transition); }
+        .refresh-btn:active { transform: rotate(180deg); }
+
+        .tabs-wrapper { background: var(--card-bg); border-bottom: 1px solid var(--border); overflow-x: auto; white-space: nowrap; scrollbar-width: none; position: sticky; top: 56px; z-index: 90; }
+        .tabs-wrapper::-webkit-scrollbar { display: none; }
+        .tabs { display: flex; padding: 12px 16px; gap: 12px; }
+        .tab { padding: 6px 16px; background: var(--bg-light); border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: var(--transition); border: 1px solid transparent; }
+        .tab.active { background: var(--primary); color: white; }
+
+        .search-container { padding: 16px 0; display: none; }
+        .search-container.active { display: block; }
+        .search-box { display: flex; gap: 8px; }
+        .search-input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); font-size: 16px; outline: none; box-shadow: var(--shadow); }
+
+        #news-feed { padding: 16px 0; }
+        .news-card { background: var(--card-bg); border-radius: 16px; overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .card-image { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .card-content { padding: 16px; }
+        .card-source { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .card-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 12px; }
+        .read-btn { color: var(--accent); text-decoration: none; font-weight: 700; font-size: 14px; }
+
+        .skeleton { background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-muted); cursor: pointer; flex: 1; gap: 4px; }
+        .nav-item.active { color: var(--accent); }
+
+        #about-page { display: none; padding: 32px 0; text-align: center; }
+        .error-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <header>
+            <div class="container header-content">
+                <div class="logo">S.<span>NEWS</span></div>
+                <button class="refresh-btn" onclick="app.refresh()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <div id="category-nav" class="tabs-wrapper">
+            <div class="tabs" id="category-tabs"></div>
+        </div>
+
+        <main class="container">
+            <div id="search-section" class="search-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search for news...">
+                    <button class="tab active" onclick="app.search()" style="border-radius:12px">Go</button>
+                </div>
+            </div>
+
+            <div id="news-feed"></div>
+
+            <div id="about-page">
+                <div style="background:white; padding:32px 24px; border-radius:20px; box-shadow:var(--shadow);">
+                    <div style="font-size:40px; margin-bottom:16px;">📰</div>
+                    <h2 style="margin-bottom:12px;">About S.NEWS</h2>
+                    <p style="color:#666; margin-bottom:24px;">Fast, reliable, and modern news platform.</p>
+                </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="app.switchView('home')"><span>🏠</span><span>Home</span></div>
+            <div class="nav-item" onclick="app.switchView('search')"><span>🔍</span><span>Search</span></div>
+            <div class="nav-item" onclick="app.switchView('about')"><span>👤</span><span>About</span></div>
+        </nav>
+    </div>
+
+    <script>
+        const app = {
+            config: {
+                apiKey: '7e4035e049cce43de02c0e1300330bdb',
+                lang: 'en',
+                country: 'in'
+            },
+            state: { currentCategory: 'general', currentView: 'home', query: '', isLoading: false },
+            categories: [
+                { id: 'general', label: 'Breaking' }, { id: 'world', label: 'World' }, { id: 'nation', label: 'India' },
+                { id: 'business', label: 'Business' }, { id: 'technology', label: 'Tech' }, { id: 'sports', label: 'Sports' }
+            ],
+
+            init() {
+                this.renderTabs();
+                this.fetchNews();
+            },
+
+            renderTabs() {
+                document.getElementById('category-tabs').innerHTML = this.categories.map(cat => `
+                    <div class="tab ${cat.id === this.state.currentCategory ? 'active' : ''}" onclick="app.setCategory('${cat.id}')">${cat.label}</div>
+                `).join('');
+            },
+
+            async fetchNews(isSearch = false) {
+                this.state.isLoading = true;
+                const feed = document.getElementById('news-feed');
+                feed.innerHTML = Array(3).fill('<div class="news-card"><div class="skeleton" style="height:200px"></div><div class="card-content"><div class="skeleton" style="height:20px; width:80%; margin-bottom:10px"></div><div class="skeleton" style="height:15px; width:100%"></div></div></div>').join('');
+
+                try {
+                    const url = isSearch 
+                        ? `https://gnews.io/api/v4/search?q=${encodeURIComponent(this.state.query)}&lang=en&apikey=${this.config.apiKey}`
+                        : `https://gnews.io/api/v4/top-headlines?category=${this.state.currentCategory}&lang=en&country=in&apikey=${this.config.apiKey}`;
+
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    if (data.articles && data.articles.length > 0) {
+                        this.renderNews(data.articles);
+                    } else {
+                        this.showError("No news found", "Try another category or search term.");
+                    }
+                } catch (e) {
+                    this.showError("Connection Error", "Unable to reach the news server. Please try again later.");
+                } finally {
+                    this.state.isLoading = false;
+                }
+            },
+
+            renderNews(articles) {
+                const feed = document.getElementById('news-feed');
+                feed.innerHTML = articles.map(a => `
+                    <div class="news-card">
+                        <img class="card-image" src="${a.image}" onerror="this.src='https://via.placeholder.com/600x400?text=News'">
+                        <div class="card-content">
+                            <span class="card-source">${a.source.name}</span>
+                            <h2 class="card-title">${a.title}</h2>
+                            <p class="card-desc">${a.description}</p>
+                            <div class="card-footer">
+                                <span style="font-size:12px; color:#999">${new Date(a.publishedAt).toLocaleDateString()}</span>
+                                <a href="${a.url}" target="_blank" class="read-btn">Read More</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            setCategory(id) {
+                this.state.currentCategory = id;
+                this.renderTabs();
+                this.fetchNews();
+            },
+
+            search() {
+                const val = document.getElementById('search-input').value.trim();
+                if(!val) return;
+                this.state.query = val;
+                this.fetchNews(true);
+            },
+
+            refresh() { this.fetchNews(this.state.currentView === 'search'); },
+
+            switchView(view) {
+                this.state.currentView = view;
+                document.getElementById('search-section').style.display = view === 'search' ? 'block' : 'none';
+                document.getElementById('about-page').style.display = view === 'about' ? 'block' : 'none';
+                document.getElementById('news-feed').style.display = view === 'about' ? 'none' : 'block';
+                document.getElementById('category-nav').style.display = view === 'about' ? 'none' : 'block';
+                document.querySelectorAll('.nav-item').forEach((el, i) => {
+                    el.classList.toggle('active', ['home', 'search', 'about'][i] === view);
+                });
+            },
+
+            showError(t, m) {
+                document.getElementById('news-feed').innerHTML = `<div class="error-msg"><h3>${t}</h3><p>${m}</p><button class="tab active" style="margin-top:20px; border:none" onclick="app.refresh()">Try Again</button></div>`;
+            }
+        };
+
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
